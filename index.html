@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Browser LLM</title>
+</head>
+<body>
+    <div id="app">
+        <div class="input-group">
+            <label for="modelSelector">LLM</label>
+            <select id="modelSelector">
+                <option value="Felladrin/onnx-TinyMistral-248M-Chat-v1">Felladrin/onnx-TinyMistral-248M-Chat-v1</option>
+                <option value="Xenova/TinyLlama-1.1B-Chat-v1.0">Xenova/TinyLlama-1.1B-Chat-v1.0</option>
+            </select>
+        </div>
+        <textarea id="textInput" placeholder="Enter your prompt here"></textarea>
+        <button id="generateBtn">Generate</button>
+        <div id="output"></div>
+    </div>
+    <script type="module" src="script.js"></script>
+</body>
+</html>

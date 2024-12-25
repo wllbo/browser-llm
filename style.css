@@ -77,6 +77,7 @@ label {
     color: white;
     border: none;
     cursor: pointer;
+    transition: background-color 0.3s ease, opacity 0.3s ease;
 }
 
 #generateBtn:hover {
@@ -88,4 +89,35 @@ label {
     background-color: #333333;
     color: #ffffff;
     font-size: 16px;
+}
+
+/* Status container styles */
+.status-container {
+    width: 100%;
+    height: auto;
+    background-color: #333;
+    margin: 10px 0;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    transition: opacity 0.3s ease;
+}
+
+.progress-bar {
+    width: 0%;
+    height: 4px;
+    background-color: #005ecb;
+    transition: width 0.3s ease, background-color 0.3s ease, opacity 0.3s ease;
+    opacity: 1;
+}
+
+.progress-bar.success {
+    background-color: #00b341;
+}
+
+.status-text {
+    padding: 10px;
+    text-align: center;
+    color: white;
+    font-size: 14px;
 }

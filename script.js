@@ -1,4 +1,3 @@
-// Create worker with module support
 const worker = new Worker('worker.js', { type: 'module' });
 
 async function checkRuntimeSupport() {
@@ -7,18 +6,22 @@ async function checkRuntimeSupport() {
     const hasWasm = typeof WebAssembly === 'object' && 
                    typeof WebAssembly.instantiate === 'function';
     
-    const hasWebGPU = 'gpu' in navigator;
-    
-    if (hasWasm && hasWebGPU) {
-        runtimeBadge.textContent = 'WASM + WebGPU';
-        runtimeBadge.classList.add('supported');
-    } else if (hasWasm) {
-        runtimeBadge.textContent = 'WASM only';
-        runtimeBadge.classList.add('supported');
-    } else {
+    if (!hasWasm) {
         runtimeBadge.textContent = 'Not supported';
         runtimeBadge.classList.add('not-supported');
+        return;
     }
+
+    let accelerator = null;
+    // TODO: Add WebNN when it is supported
+    if ('gpu' in navigator) {
+        accelerator = 'WebGPU';
+    }
+    
+    runtimeBadge.textContent = accelerator 
+        ? `WASM + ${accelerator}`
+        : 'WASM';
+    runtimeBadge.classList.add('supported');
 }
 
 class UIController {
@@ -38,10 +41,37 @@ class UIController {
     initialize() {
         this.maxTokensSlider.value = this.defaultMaxTokens;
         this.outputLengthBadge.textContent = this.defaultMaxTokens;
+        this.maxTokensSlider.addEventListener('input', () => this.handleMaxTokensChange());
         
         this.generateBtn.addEventListener('click', () => this.handleGenerateClick());
-        this.maxTokensSlider.addEventListener('input', () => this.handleMaxTokensChange());
         checkRuntimeSupport();
+        
+        this.initTooltips();
+    }
+
+    initTooltips() {
+        const badges = document.querySelectorAll('.status-badge[data-tooltip]');
+        badges.forEach(badge => {
+            const maxTokensBadge = badge.id === 'outputLength';
+            
+            if (maxTokensBadge) {
+                badge.addEventListener('touchstart', (e) => {
+                    if (!e.target.matches('#maxTokens')) {
+                        e.preventDefault();
+                    }
+                    badge.classList.add('showing-tooltip');
+                }, { passive: false });
+            } else {
+                badge.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    badge.classList.add('showing-tooltip');
+                }, { passive: false });
+            }
+
+            const hideTooltip = () => badge.classList.remove('showing-tooltip');
+            badge.addEventListener('touchend', hideTooltip);
+            badge.addEventListener('touchcancel', hideTooltip);
+        });
     }
 
     handleMaxTokensChange() {
@@ -138,7 +168,6 @@ class UIController {
                 const textNode = document.createTextNode(text);
                 this.outputElement.appendChild(textNode);
                 this.outputElement.scrollTop = this.outputElement.scrollHeight;
-                this.updateOutputLength(text);
                 break;
 
             case 'stats':
@@ -152,7 +181,6 @@ class UIController {
                 this.generateBtn.disabled = false;
                 this.generateBtn.style.display = 'block';
                 
-                // Add flash animation
                 this.outputElement.classList.add('flash-complete');
                 setTimeout(() => {
                     this.outputElement.classList.remove('flash-complete');

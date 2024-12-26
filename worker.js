@@ -1,6 +1,7 @@
-import { pipeline, TextStreamer } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.2.0/+esm';
+import { pipeline, TextStreamer } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.2.3/+esm';
 
 // Cache for generators
+const MAX_CACHE_SIZE = 3;
 const generators = new Map();
 let generator = null;
 let maxTokens = 256;  // Default value
@@ -10,12 +11,9 @@ async function sendStatus(message, minDisplayTime = 500) {
     await new Promise(resolve => setTimeout(resolve, minDisplayTime));
 }
 
-function handleModelProgress(progress, isNewDownload = false) {
-    console.log('[Worker] Model download progress:', progress.status, progress);
-    
+function handleModelProgress(progress, isNewDownload = false) {    
     // Only show progress for the model file
-    const isModelFile = progress.file?.includes('model_quantized.onnx') || 
-                       progress.file?.includes('decoder_model_merged_quantized.onnx');
+    const isModelFile = progress.file?.endsWith('.onnx');
     
     if (!isModelFile) return;
     
@@ -46,12 +44,33 @@ function handleModelProgress(progress, isNewDownload = false) {
     }
 }
 
+async function tryLoadModel(modelId, config, retryMessage) {    
+    self.postMessage({ 
+        type: 'init_step', 
+        message: retryMessage
+    });
+    
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Reset progress before starting new download
+    self.postMessage({ 
+        type: 'progress', 
+        percent: 0,
+        message: 'Downloading ONNX model... 0%',
+        isNewDownload: true
+    });
+    
+    return await pipeline('text-generation', modelId, config);
+}
+
 async function initializeGenerator(modelId, configMaxTokens) {
     try {
         maxTokens = configMaxTokens;
-        // Check if we already have this model loaded
         if (generators.has(modelId)) {
+            // Move to end by removing and re-adding
             generator = generators.get(modelId);
+            generators.delete(modelId);
+            generators.set(modelId, generator);
             self.postMessage({ type: 'ready', cached: true });
             return;
         }
@@ -66,47 +85,49 @@ async function initializeGenerator(modelId, configMaxTokens) {
         // 'q4f16' -> _q4f16.onnx
         // 'bnb4' -> _bnb4.onnx
         const baseConfig = {
-            device: "wasm",
-            dtype: 'q8',
+            device: "auto",
+            dtype: 'q4',
             progress_callback: (progress) => handleModelProgress(progress, false)
         };
         
-        try {
-            await sendStatus('Downloading model files...');
-            generator = await pipeline('text-generation', modelId, baseConfig);
-        } catch (error) {
-            // If default fails, try with decoder_model_merged
-            if (error.message && (error.message.includes('Could not locate file') || error.message.includes('404'))) {
-                console.log('Default failed, trying with decoder_model_merged...');
-                
-                self.postMessage({ 
-                    type: 'init_step', 
-                    message: 'Trying alternate model format...'
-                });
-                
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                
-                // Reset progress before starting new download
-                self.postMessage({ 
-                    type: 'progress', 
-                    percent: 0,
-                    message: 'Downloading ONNX model... 0%',
-                    isNewDownload: true
-                });
-                
-                generator = await pipeline('text-generation', modelId, {
-                    ...baseConfig,
-                    model_file_name: "decoder_model_merged",
-                    progress_callback: (progress) => handleModelProgress(progress, true)
-                });
-            } else {
-                throw error;
+        const retryConfigs = [
+            { 
+                config: baseConfig,
+                message: 'Downloading model files...'
+            },
+            { 
+                config: { ...baseConfig, dtype: 'q8', progress_callback: (progress) => handleModelProgress(progress, true) },
+                message: 'Trying q8 model quantization...'
+            },
+            { 
+                config: { ...baseConfig, dtype: 'q8', model_file_name: "decoder_model_merged", progress_callback: (progress) => handleModelProgress(progress, true) },
+                message: 'Trying alternate model file...'
             }
+        ];
+
+        for (const { config, message } of retryConfigs) {
+            try {
+                await sendStatus(message);
+                generator = await tryLoadModel(modelId, config, message);
+                break;
+            } catch (error) {
+                if (!error.message?.includes('Could not locate file') && !error.message?.includes('404')) {
+                    throw error;
+                }
+                if (config === retryConfigs[retryConfigs.length - 1].config) {
+                    throw error;
+                }
+            }
+        }
+        
+        // Remove oldest if at capacity
+        if (generators.size >= MAX_CACHE_SIZE) {
+            const oldestKey = generators.keys().next().value;
+            generators.delete(oldestKey);
         }
         
         // Cache the generator
         generators.set(modelId, generator);
-        
         self.postMessage({ type: 'ready', cached: false });
     } catch (error) {
         self.postMessage({ type: 'error', error: error.message });
@@ -139,7 +160,11 @@ async function generateText(prompt) {
                 });
             },
             callback_function: (text) => {
-                self.postMessage({ type: 'text', text });
+                text = text.replace(/<\|im_end\|>/g, '');
+                text = text.replace(/<\/s>/g, '');
+                if (text) {
+                    self.postMessage({ type: 'text', text });
+                }
             }
         });
         

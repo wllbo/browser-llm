@@ -2,11 +2,12 @@
 <html>
 <head>
     <title>Browser LLM</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
     <div class="status-badges">
-        <div class="status-badge" id="runtimeSupport" data-tooltip="Shows available runtime capabilities based on your browser. WASM is required and supported in all modern browsers. WebGPU enables faster processing but requires Chrome or other compatible browsers.">
+        <div class="status-badge" id="runtimeSupport" data-tooltip="Shows available runtimes. Web Assembly (WASM) is required and supported in most modern browsers. WebGPU enables faster processing but requires a GPU and compatible browser like Chrome.">
             <span class="badge-label">Runtime:</span>
             <span class="badge-value">Checking...</span>
         </div>
@@ -20,14 +21,17 @@
         <div class="input-group">
             <label for="modelSelector">LLM</label>
             <select id="modelSelector">
+                <option value="HuggingFaceTB/SmolLM2-135M-Instruct">HuggingFaceTB/SmolLM2-135M-Instruct</option>
+                <option value="Felladrin/onnx-Smol-Llama-101M-Chat-v1">Felladrin/onnx-Smol-Llama-101M-Chat-v1</option>
                 <option value="Felladrin/onnx-TinyMistral-248M-Chat-v2">Felladrin/onnx-TinyMistral-248M-Chat-v2</option>
-                <option value="Xenova/TinyLlama-1.1B-Chat-v1.0">Xenova/TinyLlama-1.1B-Chat-v1.0</option>
-                <option value="onnx-community/Llama-3.2-1B-Instruct">onnx-community/Llama-3.2-1B-Instruct</option>
-                <option value="HuggingFaceTB/SmolLM2-1.7B-Instruct">HuggingFaceTB/SmolLM2-1.7B-Instruct</option>
-                <option value="onnx-community/Llama-3.2-3B-Instruct">onnx-community/Llama-3.2-3B-Instruct</option>
-                <option value="Xenova/OpenELM-270M-Instruct">Xenova/OpenELM-270M-Instruct</option>
                 <option value="HuggingFaceTB/SmolLM2-360M-Instruct">HuggingFaceTB/SmolLM2-360M-Instruct</option>
-                <option value="Xenova/llama2.c-stories110M">Xenova/llama2.c-stories110M</option>
+                <option value="Xenova/OpenELM-270M-Instruct">Xenova/OpenELM-270M-Instruct</option>
+                <option value="Xenova/Qwen1.5-0.5B-Chat">Xenova/Qwen1.5-0.5B-Chat</option>
+                <option value="onnx-community/Qwen2.5-0.5B-Instruct">onnx-community/Qwen2.5-0.5B-Instruct</option>
+                <option value="Xenova/TinyLlama-1.1B-Chat-v1.0">Xenova/TinyLlama-1.1B-Chat-v1.0</option>
+                <!-- <option value="HuggingFaceTB/SmolLM2-1.7B-Instruct">HuggingFaceTB/SmolLM2-1.7B-Instruct</option>
+                <option value="onnx-community/Llama-3.2-1B-Instruct">onnx-community/Llama-3.2-1B-Instruct</option>
+                <option value="onnx-community/Llama-3.2-3B-Instruct">onnx-community/Llama-3.2-3B-Instruct</option> -->
             </select>
         </div>
         <textarea id="textInput" placeholder="Enter your prompt here"></textarea>

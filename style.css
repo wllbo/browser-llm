@@ -26,9 +26,12 @@ body {
     min-height: 100vh;
     height: 100vh;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     line-height: 1.5;
+    gap: 16px;
+    padding: 16px;
 }
 
 #app {
@@ -319,10 +322,107 @@ label {
     font-weight: 500;
 }
 
+.status-badges {
+    display: flex;
+    gap: 12px;
+}
+
+.status-badge {
+    background-color: var(--surface-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 8px 12px;
+    font-size: 13px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+}
+
+.status-badge[data-tooltip]:before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100%);
+    padding: 8px 12px;
+    background-color: var(--surface-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text);
+    font-size: 13px;
+    width: max-content;
+    max-width: min(280px, 90vw);
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 1000;
+    pointer-events: none;
+    text-align: center;
+}
+
+.status-badge[data-tooltip]:hover:before,
+.status-badge[data-tooltip]:hover:after {
+    opacity: 1;
+    visibility: visible;
+}
+
+@media (max-width: 640px) {
+    .status-badge[data-tooltip]:before {
+        width: min(280px, 90vw);
+        white-space: normal;
+        text-align: center;
+        left: 50%;
+        transform: translateX(-50%) translateY(100%);
+    }
+    
+    .status-badge:first-child[data-tooltip]:before {
+        left: 0;
+        transform: translateY(100%);
+    }
+    
+    .status-badge:last-child[data-tooltip]:before {
+        left: auto;
+        right: 0;
+        transform: translateY(100%);
+    }
+    
+    .status-badge:first-child[data-tooltip]:after {
+        left: 20%;
+    }
+    
+    .status-badge:last-child[data-tooltip]:after {
+        left: 80%;
+    }
+}
+
+.badge-label {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.badge-value {
+    color: var(--text);
+    padding: 2px 8px;
+    background-color: var(--surface);
+    border-radius: var(--radius-md);
+}
+
+.badge-value.supported {
+    color: rgb(34, 255, 109);
+}
+
+.badge-value.not-supported {
+    color: rgb(255, 86, 86);
+}
+
 @media (max-width: 640px) {
     body {
-        align-items: stretch;
         padding: 16px;
+        justify-content: flex-start;
+        gap: 12px;
     }
     
     #app {
@@ -335,4 +435,46 @@ label {
         height: 100px;
         max-height: 150px;
     }
+}
+
+#maxTokens {
+    width: 80px;
+    height: 4px;
+    -webkit-appearance: none;
+    background: var(--surface);
+    border-radius: 2px;
+    outline: none;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+#maxTokens:hover {
+    opacity: 1;
+}
+
+#maxTokens::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#maxTokens::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--primary);
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+#maxTokens::-webkit-slider-thumb:hover,
+#maxTokens::-moz-range-thumb:hover {
+    background: var(--primary-hover);
+    transform: scale(1.2);
 }

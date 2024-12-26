@@ -3,14 +3,13 @@ import { pipeline, TextStreamer } from 'https://cdn.jsdelivr.net/npm/@huggingfac
 // Cache for generators
 const generators = new Map();
 let generator = null;
+let maxTokens = 256;  // Default value
 
-// Helper function to send status with minimum display time
 async function sendStatus(message, minDisplayTime = 500) {
     self.postMessage({ type: 'status', message });
     await new Promise(resolve => setTimeout(resolve, minDisplayTime));
 }
 
-// Helper function to handle model download progress
 function handleModelProgress(progress, isNewDownload = false) {
     console.log('[Worker] Model download progress:', progress.status, progress);
     
@@ -47,8 +46,9 @@ function handleModelProgress(progress, isNewDownload = false) {
     }
 }
 
-async function initializeGenerator(modelId) {
+async function initializeGenerator(modelId, configMaxTokens) {
     try {
+        maxTokens = configMaxTokens;
         // Check if we already have this model loaded
         if (generators.has(modelId)) {
             generator = generators.get(modelId);
@@ -144,7 +144,7 @@ async function generateText(prompt) {
         });
         
         await generator(prompt, {
-            max_new_tokens: 256,
+            max_new_tokens: maxTokens,
             top_k: 3,
             repetition_penalty: 1.1,
             streamer,
@@ -170,7 +170,7 @@ self.onmessage = async function(e) {
     const { type, data } = e.data;
     switch (type) {
         case 'init':
-            await initializeGenerator(data.modelId);
+            await initializeGenerator(data.modelId, data.maxTokens);
             break;
         case 'generate':
             await generateText(data.prompt);

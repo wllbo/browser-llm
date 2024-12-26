@@ -5,6 +5,17 @@
     <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
+    <div class="status-badges">
+        <div class="status-badge" id="runtimeSupport" data-tooltip="Shows available runtime capabilities based on your browser. WASM is required and supported in all modern browsers. WebGPU enables faster processing but requires Chrome or other compatible browsers.">
+            <span class="badge-label">Runtime:</span>
+            <span class="badge-value">Checking...</span>
+        </div>
+        <div class="status-badge" id="outputLength" data-tooltip="Controls the maximum length of generated text. Higher values allow longer responses but take more time.">
+            <span class="badge-label">Max Tokens:</span>
+            <span class="badge-value">256</span>
+            <input type="range" id="maxTokens" min="64" max="1024" value="256" step="64">
+        </div>
+    </div>
     <div id="app">
         <div class="input-group">
             <label for="modelSelector">LLM</label>

@@ -33,7 +33,7 @@ class UIController {
         this.generatingStatus.style.display = 'block';
         this.generatingStatus.innerHTML = `
             <div class="progress-bar"></div>
-            <div class="status-text">Initializing...</div>
+            <div class="status-text bright">Initializing...</div>
         `;
     }
 
@@ -47,6 +47,7 @@ class UIController {
             case 'init_step':
                 if (message === 'Trying alternate model format...') {
                     this.showingAlternateMessage = true;
+                    statusBar.classList.remove('downloading');
                     setTimeout(() => {
                         this.showingAlternateMessage = false;
                         if (statusText.textContent === message) {
@@ -58,14 +59,21 @@ class UIController {
                 break;
 
             case 'progress':
-                if (e.data.isNewDownload) statusBar.style.width = '0%';
+                if (e.data.isNewDownload) {
+                    statusBar.style.width = '0%';
+                }
+                statusBar.classList.add('downloading');
                 statusBar.style.width = e.data.percent + '%';
                 if (!this.showingAlternateMessage) {
                     statusText.textContent = `Downloading ONNX model... ${e.data.percent}%`;
                 }
+                if (e.data.percent === 100) {
+                    statusBar.classList.remove('downloading');
+                }
                 break;
 
             case 'ready':
+                statusBar.classList.remove('downloading');
                 statusBar.style.width = '100%';
                 statusBar.classList.add('success');
                 statusText.textContent = cached ? 'Using cached model' : 'Model loaded successfully!';
@@ -73,6 +81,7 @@ class UIController {
                 setTimeout(() => {
                     statusBar.style.opacity = '0';
                     statusText.textContent = 'Starting generation...';
+                    statusText.classList.remove('bright');
                     worker.postMessage({ 
                         type: 'generate', 
                         data: { 
@@ -86,22 +95,34 @@ class UIController {
                 break;
 
             case 'text':
+                if (!this.generatingStatus.classList.contains('generating')) {
+                    this.generatingStatus.classList.add('generating');
+                }
                 const textNode = document.createTextNode(text);
                 this.outputElement.appendChild(textNode);
                 this.outputElement.scrollTop = this.outputElement.scrollHeight;
                 break;
 
             case 'stats':
+                statusText.classList.remove('bright');
                 statusText.textContent = `Generating... (${stats.tokenCount} tokens, ${stats.tokensPerSecond} tokens/sec)`;
                 break;
 
             case 'complete':
+                this.generatingStatus.classList.remove('generating');
                 statusText.textContent = `Complete! Generated ${stats.totalTokens} tokens in ${stats.totalTime}s (${stats.averageSpeed} tokens/sec)`;
                 this.generateBtn.disabled = false;
                 this.generateBtn.style.display = 'block';
+                
+                // Add flash animation
+                this.outputElement.classList.add('flash-complete');
+                setTimeout(() => {
+                    this.outputElement.classList.remove('flash-complete');
+                }, 2000);
                 break;
 
             case 'error':
+                this.generatingStatus.classList.remove('generating');
                 console.error('Error:', error);
                 this.outputElement.textContent = `Error: ${error}`;
                 statusText.textContent = `Error: ${error}`;
@@ -113,6 +134,5 @@ class UIController {
     }
 }
 
-// Initialize the UI controller
 const uiController = new UIController();
 uiController.initialize();
